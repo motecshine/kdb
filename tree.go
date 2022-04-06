@@ -130,14 +130,7 @@ func (rb *RB) Put(key []byte, value []byte) ([]byte, bool) {
 		cmp    int
 		parent *node
 	)
-	rb.Walk(func(node *node) {
-		cmp = bytes.Compare(key, node.Key())
-		if cmp == 0 {
-			log.Info().Msgf("update current: %s, old: %s", string(key), string(node.Key()))
-			node.SetValue(value)
-			return
-		}
-	})
+
 	// 更新
 	{
 		current := rb.root
@@ -146,7 +139,11 @@ func (rb *RB) Put(key []byte, value []byte) ([]byte, bool) {
 			cmp = bytes.Compare(key, current.key)
 			// 找到 old key
 			if cmp == 0 {
-
+				log.Info().Msgf("update current: %s, old: %s", string(key), string(current.key))
+				prevVal := current.value
+				current.value = value
+				// 更新不会影响树平衡所以我们直接返回
+				return prevVal, false
 			}
 			// 如果当前key值小于0,那我们就遍历左枝,否则我们遍历右枝.
 			if cmp < 0 {
