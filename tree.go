@@ -135,6 +135,7 @@ func (rb *RB) Put(key []byte, value []byte) ([]byte, bool) {
 		if cmp == 0 {
 			log.Info().Msgf("update current: %s, old: %s", string(key), string(node.Key()))
 			node.SetValue(value)
+			return
 		}
 	})
 	// 更新
