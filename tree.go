@@ -78,10 +78,7 @@ func (n *node) SetParent(parent *node) {
 type Avl interface {
 	RotateLeft(node *node)
 	RotateRight(node *node)
-	Put(key []byte, value []byte) ([]byte, bool)
-	Get(key []byte) ([]byte, bool)
 	Insert(newNode *node)
-	Update(parent *node, key []byte, value []byte)
 }
 
 // RB
@@ -89,6 +86,7 @@ type Avl interface {
 type RB struct {
 	Iterator
 	Avl
+	Storage
 	root             *node
 	IteratorNextNode *node
 	size             atomic.Int64
@@ -170,10 +168,6 @@ func (rb *RB) Put(key []byte, value []byte) ([]byte, bool) {
 		rb.size.Add(1)
 	}
 	return nil, false
-}
-
-func (rb *RB) Update() {
-
 }
 
 // Insert
