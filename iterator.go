@@ -1,8 +1,8 @@
 package kdb
 
-type Iterator interface {
-	Next() *node
+type iterator interface {
+	Next() node
 	HasNext() bool
-	Walk(action func(key, value []byte))
+	Visit(action func(key, value []byte) bool) bool
 	Rewind()
 }
