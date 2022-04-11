@@ -28,6 +28,14 @@ func TestListPut(t *testing.T) {
 		i++
 		return false
 	})
+	i = 1
+	// test rewind
+	l.Visit(func(key, value []byte) bool {
+		require.Equal(t, string(key), fmt.Sprintf("key%d", i))
+		require.Equal(t, string(value), fmt.Sprintf("value%d", i))
+		i++
+		return false
+	})
 }
 
 func TestListGet(t *testing.T) {
