@@ -50,7 +50,6 @@ func (l *list) HasNext() bool {
 }
 
 func (l *list) Visit(action func(key, value []byte) bool) bool {
-	// rewind cursor
 	l.Rewind()
 	current := l.node
 	for current != nil {

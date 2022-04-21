@@ -7,6 +7,12 @@ import (
 	"testing"
 )
 
+func TestOffset(t *testing.T) {
+
+	x := 1
+	t.Log(x << 1)
+	t.Log(x >> 1)
+}
 func TestListPut(t *testing.T) {
 	data := [][]string{
 		{"key1", "value1"},
