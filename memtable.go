@@ -4,7 +4,6 @@ import "bytes"
 
 type memoryTable struct {
 	storage storage
-	wal     file
 	buf     *bytes.Buffer
 }
 
