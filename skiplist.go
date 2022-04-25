@@ -1,6 +1,7 @@
 package kdb
 
 import (
+	"bytes"
 	"github.com/dgraph-io/ristretto/z"
 	"math"
 	"sync/atomic"
@@ -65,11 +66,16 @@ func (s *SimpleSkl) Get(key []byte) ([]byte, bool) {
 }
 
 func (s *SimpleSkl) Put(key, value []byte) {
-	// 先查一下key是否存在
+	// badger 允许overwrite当前的value， 所以我们也支持
 	currentHeight := s.getHeight()
+	var prev [defaultLevel + 1]*SimpleSklNode
+	var next [defaultLevel + 1]*SimpleSklNode
 	// 更新逻辑
 	for i := int(currentHeight) - 1; i >= 0; i-- {
-		print("not impl!")
+		prev[i], next[i] = s.findSpliceForLevel(key, prev[i+1], i)
+		if prev[i] == next[i] {
+
+		}
 	}
 
 	// 新节点
@@ -84,13 +90,39 @@ func (s *SimpleSkl) Put(key, value []byte) {
 	}
 
 	// 寻找 新节点插入的位置
+	// 1. 当  before < key < next
+	// 2. 当  key > latest node key
 	for i := 0; i < newNodeHeight; i++ {
+		for {
+			prev[i], next[i] = s.findSpliceForLevel(key, s.head, i)
+			if next[i] == nil {
+				prev[i].Level[i].next = node
+				break
+			}
 
+		}
 	}
 }
 
-func (s *SimpleSkl) findSpliceForLevel(key []byte, beforeNode *SimpleSklNode, level int) {
+func (s *SimpleSkl) findSpliceForLevel(key []byte, beforeNode *SimpleSklNode, level int) (before, next *SimpleSklNode) {
+	for {
+		splice := beforeNode.Level[level]
+		if splice == nil {
+			return beforeNode, nil
+		}
 
+		if splice.next != nil {
+			cmp := bytes.Compare(splice.next.Key, key)
+			if cmp == 0 {
+				return splice.next, splice.next
+			}
+
+			if cmp < 0 {
+				return beforeNode, splice.next
+			}
+		}
+		beforeNode = splice.next
+	}
 }
 
 func (s *SimpleSkl) findNear() {
