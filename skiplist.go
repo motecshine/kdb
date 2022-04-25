@@ -82,11 +82,15 @@ func (s *SimpleSkl) Put(key, value []byte) {
 		}
 		currentHeight = s.getHeight()
 	}
-	head := s.head
+
 	// 寻找 新节点插入的位置
 	for i := 0; i < newNodeHeight; i++ {
 
 	}
+}
+
+func (s *SimpleSkl) findSpliceForLevel(key []byte, beforeNode *SimpleSklNode, level int) {
+
 }
 
 func (s *SimpleSkl) findNear() {
