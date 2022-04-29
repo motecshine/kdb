@@ -23,11 +23,12 @@ type Level struct {
 	next *SimpleSklNode
 }
 
-func NewLevel(level int) (levels []*Level) {
+func NewLevel(level int) []*Level {
+	levels := make([]*Level, level)
 	for i := 0; i < level; i++ {
 		levels[i] = new(Level)
 	}
-	return
+	return levels
 }
 
 type SimpleSklNode struct {
@@ -66,22 +67,12 @@ func (s *SimpleSkl) Get(key []byte) ([]byte, bool) {
 }
 
 func (s *SimpleSkl) Put(key, value []byte) {
-	// badger 允许overwrite当前的value， 所以我们也支持
 	currentHeight := s.getHeight()
-	var prev [defaultLevel + 1]*SimpleSklNode
-	var next [defaultLevel + 1]*SimpleSklNode
-	// 更新逻辑
-	for i := int(currentHeight) - 1; i >= 0; i-- {
-		prev[i], next[i] = s.findSpliceForLevel(key, prev[i+1], i)
-		if prev[i] == next[i] {
-
-		}
-	}
-
-	// 新节点
 	newNodeHeight := s.randomHeight()
 	node := newNode(key, value, newNodeHeight)
-
+	var prev [defaultLevel + 1]*SimpleSklNode
+	var next [defaultLevel + 1]*SimpleSklNode
+	// 新节点
 	for int(currentHeight) < newNodeHeight {
 		if atomic.CompareAndSwapInt32(&s.height, currentHeight, int32(newNodeHeight)) {
 			break
@@ -95,11 +86,11 @@ func (s *SimpleSkl) Put(key, value []byte) {
 	for i := 0; i < newNodeHeight; i++ {
 		for {
 			prev[i], next[i] = s.findSpliceForLevel(key, s.head, i)
-			if next[i] == nil {
-				prev[i].Level[i].next = node
-				break
+			prev[i].Level[i].next = node
+			if next[i] != nil {
+				node.Level[i] = next[i].Level[i]
 			}
-
+			break
 		}
 	}
 }
@@ -120,8 +111,10 @@ func (s *SimpleSkl) findSpliceForLevel(key []byte, beforeNode *SimpleSklNode, le
 			if cmp < 0 {
 				return beforeNode, splice.next
 			}
+			beforeNode = splice.next
+			continue
 		}
-		beforeNode = splice.next
+		return beforeNode, nil
 	}
 }
 
