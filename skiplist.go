@@ -3,6 +3,7 @@ package kdb
 import (
 	"bytes"
 	"github.com/dgraph-io/ristretto/z"
+	"github.com/rs/zerolog/log"
 	"math"
 	"sync/atomic"
 )
@@ -32,9 +33,10 @@ func NewLevel(level int) []*Level {
 }
 
 type SimpleSklNode struct {
-	Key   []byte
-	Value []byte
-	Level []*Level
+	Key    []byte
+	Value  []byte
+	height int32
+	Level  []*Level
 }
 
 func NewSimpleSkl() *SimpleSkl {
@@ -47,9 +49,10 @@ func NewSimpleSkl() *SimpleSkl {
 
 func newNode(key, value []byte, level int) *SimpleSklNode {
 	return &SimpleSklNode{
-		Key:   key,
-		Value: value,
-		Level: NewLevel(level),
+		Key:    key,
+		Value:  value,
+		Level:  NewLevel(level),
+		height: int32(level),
 	}
 }
 
@@ -67,61 +70,89 @@ func (s *SimpleSkl) Get(key []byte) ([]byte, bool) {
 }
 
 func (s *SimpleSkl) Put(key, value []byte) {
-	currentHeight := s.getHeight()
-	newNodeHeight := s.randomHeight()
-	node := newNode(key, value, newNodeHeight)
+	currentMaxHeight := s.getHeight()
 	var prev [defaultLevel + 1]*SimpleSklNode
 	var next [defaultLevel + 1]*SimpleSklNode
-	// 新节点
-	for int(currentHeight) < newNodeHeight {
-		if atomic.CompareAndSwapInt32(&s.height, currentHeight, int32(newNodeHeight)) {
+	// 先看看key 存不存在
+	prev[currentMaxHeight] = s.head
+	for i := currentMaxHeight - 1; i >= 0; i-- {
+		// 遍历同level 所有的节点
+		var canUpdate bool
+		prev[i], next[i], canUpdate = s.findSpliceNode(prev[i+1], key, i)
+		if canUpdate && (prev[i] == next[i]) {
+			next[i].Value = value
+			return
+		}
+	}
+	// 如果没找到 创建新的node
+	newNodeHeight := s.randomHeight()
+	node := newNode(key, value, newNodeHeight)
+
+	// 更新高度
+	for newNodeHeight > int(currentMaxHeight) {
+		if atomic.CompareAndSwapInt32(&s.height, currentMaxHeight, int32(newNodeHeight)) {
 			break
 		}
-		currentHeight = s.getHeight()
+		currentMaxHeight = s.getHeight()
 	}
-
-	// 寻找 新节点插入的位置
-	// 1. 当  before < key < next
-	// 2. 当  key > latest node key
 	for i := 0; i < newNodeHeight; i++ {
 		for {
-			prev[i], next[i] = s.findSpliceForLevel(key, s.head, i)
+			if prev[i] == nil {
+				if i <= 1 {
+					panic("This cannot happen in base level.")
+				}
+				var canUpdate bool
+				prev[i], next[i], canUpdate = s.findSpliceNode(prev[i+1], key, int32(i))
+				if canUpdate {
+					panic("update node expect")
+				}
+			}
 			prev[i].Level[i].next = node
-			if next[i] != nil {
-				node.Level[i] = next[i].Level[i]
-			}
-			break
+			node.Level[i].next = next[i]
+			return
 		}
 	}
 }
 
-func (s *SimpleSkl) findSpliceForLevel(key []byte, beforeNode *SimpleSklNode, level int) (before, next *SimpleSklNode) {
+func (s *SimpleSkl) findSpliceNode(beforeNode *SimpleSklNode, key []byte, level int32) (startNode, nextNode *SimpleSklNode, update bool) {
 	for {
-		splice := beforeNode.Level[level]
-		if splice == nil {
-			return beforeNode, nil
+		nextNode := beforeNode.Level[level].next
+		if nextNode == nil {
+			return beforeNode, nextNode, false
+		}
+		cmp := s.CompareKeys(key, nextNode.Key)
+
+		if cmp == 0 {
+			return nextNode, nextNode, true
 		}
 
-		if splice.next != nil {
-			cmp := bytes.Compare(splice.next.Key, key)
-			if cmp == 0 {
-				return splice.next, splice.next
-			}
-
-			if cmp < 0 {
-				return beforeNode, splice.next
-			}
-			beforeNode = splice.next
-			continue
+		if cmp < 0 {
+			return beforeNode, nextNode, false
 		}
-		return beforeNode, nil
+
+		beforeNode = nextNode
 	}
+	return nil, nil, false
 }
 
-func (s *SimpleSkl) findNear() {
-
+func (s *SimpleSkl) CompareKeys(prev, current []byte) int {
+	return bytes.Compare(prev, current)
 }
 
 func (s *SimpleSkl) getHeight() int32 {
 	return atomic.LoadInt32(&s.height)
+}
+
+func (s *SimpleSkl) Print() {
+	currentMaxHeight := s.getHeight()
+	for i := currentMaxHeight - 1; i > 0; i-- {
+		for {
+			current := s.head.Level[i].next
+			if current == nil {
+				break
+			}
+			log.Info().Msgf("height:%d, key:%s, value:%s", current.height, string(current.Key), string(current.Value))
+			current = current.Level[i].next
+		}
+	}
 }

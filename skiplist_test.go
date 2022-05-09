@@ -16,4 +16,5 @@ func TestSimpleSkl_Put(t *testing.T) {
 	skl.Put([]byte("hello5"), []byte("world5"))
 	skl.Put([]byte("hello6"), []byte("world6"))
 	skl.Put([]byte("hello7"), []byte("world7"))
+	skl.Print()
 }
