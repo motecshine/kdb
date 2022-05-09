@@ -99,7 +99,7 @@ func (s *SimpleSkl) Put(key, value []byte) {
 		for {
 			if prev[i] == nil {
 				if i <= 1 {
-					panic("This cannot happen in base level.")
+					panic("can not append level0 ")
 				}
 				var canUpdate bool
 				prev[i], next[i], canUpdate = s.findSpliceNode(prev[i+1], key, int32(i))
@@ -107,15 +107,16 @@ func (s *SimpleSkl) Put(key, value []byte) {
 					panic("update node expect")
 				}
 			}
-			prev[i].Level[i].next = node
 			node.Level[i].next = next[i]
-			return
+			prev[i].Level[i].next = node
+			break
 		}
 	}
 }
 
 func (s *SimpleSkl) findSpliceNode(beforeNode *SimpleSklNode, key []byte, level int32) (startNode, nextNode *SimpleSklNode, update bool) {
 	for {
+
 		nextNode := beforeNode.Level[level].next
 		if nextNode == nil {
 			return beforeNode, nextNode, false
@@ -145,13 +146,15 @@ func (s *SimpleSkl) getHeight() int32 {
 
 func (s *SimpleSkl) Print() {
 	currentMaxHeight := s.getHeight()
-	for i := currentMaxHeight - 1; i > 0; i-- {
+
+	for i := currentMaxHeight - 1; i >= 0; i-- {
+		current := s.head.Level[i].next
+		log.Info().Msgf("%d", i)
 		for {
-			current := s.head.Level[i].next
 			if current == nil {
 				break
 			}
-			log.Info().Msgf("height:%d, key:%s, value:%s", current.height, string(current.Key), string(current.Value))
+			log.Info().Msgf("height:%d, key:%s, value:%s", i, string(current.Key), string(current.Value))
 			current = current.Level[i].next
 		}
 	}
