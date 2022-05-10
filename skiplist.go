@@ -15,8 +15,7 @@ const (
 
 type SimpleSkl struct {
 	height int32
-	// head is nil and its indexer
-	head *SimpleSklNode
+	head   *SimpleSklNode
 	storage
 }
 
