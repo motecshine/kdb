@@ -3,10 +3,24 @@ package kdb
 import "testing"
 
 func TestSimpleSkl_Get(t *testing.T) {
+	skl := fakeData()
+	value, _ := skl.Get([]byte("hello1"))
+	t.Logf("%s", string(value))
+	value2, _ := skl.Get([]byte("hello 2"))
+	t.Logf("%s", string(value2))
 
+	value3, _ := skl.Get([]byte("hello2"))
+	t.Logf("%s", string(value3))
 }
 
 func TestSimpleSkl_Put(t *testing.T) {
+	skl := fakeData()
+
+	value, _ := skl.Get([]byte("hello4"))
+	t.Logf("%s", string(value))
+}
+
+func fakeData() *SimpleSkl {
 	skl := NewSimpleSkl()
 	skl.Put([]byte("hello"), []byte("world"))
 	skl.Put([]byte("hello1"), []byte("world1"))
@@ -16,5 +30,5 @@ func TestSimpleSkl_Put(t *testing.T) {
 	skl.Put([]byte("hello5"), []byte("world5"))
 	skl.Put([]byte("hello6"), []byte("world6"))
 	skl.Put([]byte("hello7"), []byte("world7"))
-	skl.Print()
+	return skl
 }

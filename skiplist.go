@@ -66,7 +66,41 @@ func (s *SimpleSkl) randomHeight() int {
 
 // Get  从 skl.height 最高的地方开始 朝下查找
 func (s *SimpleSkl) Get(key []byte) ([]byte, bool) {
-	return nil, false
+	x := s.head
+	level := s.getHeight() - 1
+	for {
+		next := x.Level[level].next
+		if next == nil {
+			if level > 0 {
+				log.Debug().Msgf("current level: %d next node is nil ", level)
+				level--
+				continue
+			}
+			return nil, false
+		}
+
+		cmp := s.CompareKeys(key, next.Key)
+		log.Debug().Msgf("current level: %d, cmp: %d, key:%s next key: %s", level, cmp, string(key), string(next.Key))
+		if cmp > 0 {
+			x = next
+			continue
+		}
+		if cmp == 0 {
+			return x.Value, false
+		}
+
+		// cmp < 0. In other words, x.key < key < next.
+		if level > 0 {
+			level--
+			continue
+		}
+
+		// Try to return x. Make sure it is not a head node.
+		if x == s.head {
+			return nil, false
+		}
+		return nil, false
+	}
 }
 
 func (s *SimpleSkl) Put(key, value []byte) {
