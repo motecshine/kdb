@@ -80,6 +80,7 @@ func (s *SimpleSkl) Put(key, value []byte) {
 		var canUpdate bool
 		prev[i], next[i], canUpdate = s.findSpliceNode(prev[i+1], key, i)
 		if canUpdate && (prev[i] == next[i]) {
+			log.Info().Msgf("find same key, value will update.")
 			next[i].Value = value
 			return
 		}
@@ -102,7 +103,7 @@ func (s *SimpleSkl) Put(key, value []byte) {
 					panic("can not append level0 ")
 				}
 				var canUpdate bool
-				prev[i], next[i], canUpdate = s.findSpliceNode(prev[i+1], key, int32(i))
+				prev[i], next[i], canUpdate = s.findSpliceNode(s.head, key, int32(i))
 				if canUpdate {
 					panic("update node expect")
 				}
@@ -116,21 +117,23 @@ func (s *SimpleSkl) Put(key, value []byte) {
 
 func (s *SimpleSkl) findSpliceNode(beforeNode *SimpleSklNode, key []byte, level int32) (startNode, nextNode *SimpleSklNode, update bool) {
 	for {
-
+		if beforeNode == nil {
+			panic("unexpected level")
+		}
 		nextNode := beforeNode.Level[level].next
 		if nextNode == nil {
 			return beforeNode, nextNode, false
 		}
 		cmp := s.CompareKeys(key, nextNode.Key)
-
 		if cmp == 0 {
 			return nextNode, nextNode, true
 		}
-
 		if cmp < 0 {
 			return beforeNode, nextNode, false
 		}
-
+		if nextNode == nil {
+			panic("unexpected level")
+		}
 		beforeNode = nextNode
 	}
 	return nil, nil, false
@@ -146,7 +149,6 @@ func (s *SimpleSkl) getHeight() int32 {
 
 func (s *SimpleSkl) Print() {
 	currentMaxHeight := s.getHeight()
-
 	for i := currentMaxHeight - 1; i >= 0; i-- {
 		current := s.head.Level[i].next
 		log.Info().Msgf("%d", i)
