@@ -151,9 +151,6 @@ func (s *SimpleSkl) Put(key, value []byte) {
 
 func (s *SimpleSkl) findSpliceNode(beforeNode *SimpleSklNode, key []byte, level int32) (startNode, nextNode *SimpleSklNode, update bool) {
 	for {
-		if beforeNode == nil {
-			panic("unexpected level")
-		}
 		nextNode := beforeNode.Level[level].next
 		if nextNode == nil {
 			return beforeNode, nextNode, false
@@ -165,12 +162,8 @@ func (s *SimpleSkl) findSpliceNode(beforeNode *SimpleSklNode, key []byte, level 
 		if cmp < 0 {
 			return beforeNode, nextNode, false
 		}
-		if nextNode == nil {
-			panic("unexpected level")
-		}
 		beforeNode = nextNode
 	}
-	return nil, nil, false
 }
 
 func (s *SimpleSkl) CompareKeys(prev, current []byte) int {
