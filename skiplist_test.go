@@ -15,9 +15,15 @@ func TestSimpleSkl_Get(t *testing.T) {
 
 func TestSimpleSkl_Put(t *testing.T) {
 	skl := fakeData()
+	skl.Print()
+}
 
-	value, _ := skl.Get([]byte("hello4"))
-	t.Logf("%s", string(value))
+func TestSimpleSkl_Put_2(t *testing.T) {
+	skl := fakeData()
+	skl.Print()
+
+	skl.Put([]byte("hello7"), []byte("new hello7 value"))
+	skl.Print()
 }
 
 func fakeData() *SimpleSkl {
