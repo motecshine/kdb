@@ -71,7 +71,6 @@ func (s *SimpleSkl) Get(key []byte) ([]byte, bool) {
 		next := x.Level[level].next
 		if next == nil {
 			if level > 0 {
-				log.Debug().Msgf("current level: %d next node is nil ", level)
 				level--
 				continue
 			}
@@ -79,13 +78,12 @@ func (s *SimpleSkl) Get(key []byte) ([]byte, bool) {
 		}
 
 		cmp := s.CompareKeys(key, next.Key)
-		log.Debug().Msgf("current level: %d, cmp: %d, key:%s next key: %s", level, cmp, string(key), string(next.Key))
 		if cmp > 0 {
 			x = next
 			continue
 		}
 		if cmp == 0 {
-			return x.Value, false
+			return next.Value, false
 		}
 
 		// cmp < 0. In other words, x.key < key < next.
@@ -113,7 +111,6 @@ func (s *SimpleSkl) Put(key, value []byte) {
 		var canUpdate bool
 		prev[i], next[i], canUpdate = s.findSpliceNode(prev[i+1], key, i)
 		if canUpdate && (prev[i] == next[i]) {
-			log.Info().Msgf("find same key, value will update.")
 			next[i].Value = value
 			return
 		}

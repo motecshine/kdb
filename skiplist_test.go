@@ -9,7 +9,7 @@ func TestSimpleSkl_Get(t *testing.T) {
 	value2, _ := skl.Get([]byte("hello 2"))
 	t.Logf("%s", string(value2))
 
-	value3, _ := skl.Get([]byte("hello2"))
+	value3, _ := skl.Get([]byte("hello5"))
 	t.Logf("%s", string(value3))
 }
 
