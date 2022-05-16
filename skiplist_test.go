@@ -1,32 +1,11 @@
 package kdb
 
-import "testing"
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
-func TestSimpleSkl_Get(t *testing.T) {
-	skl := fakeData()
-	value, _ := skl.Get([]byte("hello1"))
-	t.Logf("%s", string(value))
-	value2, _ := skl.Get([]byte("hello 2"))
-	t.Logf("%s", string(value2))
-
-	value3, _ := skl.Get([]byte("hello5"))
-	t.Logf("%s", string(value3))
-}
-
-func TestSimpleSkl_Put(t *testing.T) {
-	skl := fakeData()
-	skl.Print()
-}
-
-func TestSimpleSkl_Put_2(t *testing.T) {
-	skl := fakeData()
-	skl.Print()
-
-	skl.Put([]byte("hello7"), []byte("new hello7 value"))
-	skl.Print()
-}
-
-func fakeData() *SimpleSkl {
+func TestSimpleSkl(t *testing.T) {
 	skl := NewSimpleSkl()
 	skl.Put([]byte("hello"), []byte("world"))
 	skl.Put([]byte("hello1"), []byte("world1"))
@@ -36,5 +15,27 @@ func fakeData() *SimpleSkl {
 	skl.Put([]byte("hello5"), []byte("world5"))
 	skl.Put([]byte("hello6"), []byte("world6"))
 	skl.Put([]byte("hello7"), []byte("world7"))
-	return skl
+
+	// test find
+	v, b := skl.Get([]byte("hello"))
+	if !b {
+		t.Failed()
+	}
+	assert.Equal(t, []byte("world"), v)
+
+	v, b = skl.Get([]byte("hello1"))
+	if !b {
+		t.Failed()
+	}
+	assert.Equal(t, []byte("world1"), v)
+
+	// update
+	skl.Put([]byte("hello"), []byte("new world"))
+
+	v, b = skl.Get([]byte("hello"))
+	if !b {
+		t.Failed()
+	}
+	assert.Equal(t, []byte("new world"), v)
+	skl.Print()
 }
